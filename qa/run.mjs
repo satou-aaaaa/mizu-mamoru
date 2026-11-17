@@ -269,11 +269,29 @@ try {
     await q.context().close();
   }
 
+  // とことんを終えたときの保存が失敗しても、古い途中経過に戻らない
+  {
+    const q = await newPage(); await closeHow(q);
+    await q.click("#go-e"); await q.waitForTimeout(150); await solve(q); await q.waitForTimeout(100);
+    const had = !!(await mem(q)).runs.e;
+    const ended = await q.evaluate(() => { const o = Storage.prototype.setItem; Storage.prototype.setItem = function () { throw new Error("full"); }; __dc.save((s) => { s.runs.e = null; }); const r = __dc.load().runs.e; Storage.prototype.setItem = o; return r; });
+    check("とことんを終えた保存が失敗しても、読み直しで古い回が戻らない", had && !ended, `${had},${JSON.stringify(ended)?.slice(0, 40)}`);
+    await q.close();
+  }
+
   // カレンダー・あとから：過去の日の記録を置いて見る
   {
     const q = await newPage();
     await q.evaluate(([d2, d3]) => { localStorage.setItem("mizu-v1", JSON.stringify({ v: 1, tut: true, days: { [d2]: { m: [0, 0, 0, 0, 0] }, [d3]: { m: [1, 0, 0, 2, 0] } }, hdays: {}, adays: {}, dex: {}, runs: {}, kofi: {}, ach: {}, ebest: 0, posts: 0, recent: [] })); }, [dayBefore(2), dayBefore(3)]);
     await q.reload(); await q.waitForTimeout(150);
+    for (const w of [320, 390]) {
+      await q.setViewportSize({ width: w, height: 800 }); await q.click("#go-cal"); await q.waitForTimeout(100);
+      const ws = await q.$$eval(".cal .c:not(.off)", (cs) => cs.map((c) => c.getBoundingClientRect().width));
+      const ov = await q.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      check(`カレンダー：幅${w}pxでも日のますが44px以上・横にはみ出さない`, ws.length > 0 && Math.min(...ws) >= 44 && ov <= 0, `${Math.min(...ws).toFixed(1)}px ov${ov}`);
+      await q.click("#back"); await q.waitForTimeout(80);
+    }
+    await q.setViewportSize({ width: 390, height: 800 });
     check("ホームの「続けて」は、きのうを休んだら — （休んだ日を責めない）", (await q.textContent(".stats")).includes("—"));
     await q.click("#go-cal");
     const lateList = await q.evaluate(() => __dc.lateDays(__dc.load()));
@@ -321,7 +339,7 @@ try {
         await q.waitForTimeout(100);
         const ov = await q.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
         if (ov > 0) bad.push(`${w}px ${go || "ホーム"} ${ov}px`);
-        small.push(...(await q.$$eval("button:not([disabled]), a[href]", (bs) => bs.filter((b) => b.checkVisibility() && !b.closest(".cal")).filter((b) => b.getBoundingClientRect().height < 44 || b.getBoundingClientRect().width < 44).map((b) => (b.id || b.className || b.textContent).slice(0, 20)))).map((x) => `${w}/${go}:${x}`));
+        small.push(...(await q.$$eval("button:not([disabled]), a[href]", (bs) => bs.filter((b) => b.checkVisibility()).filter((b) => b.getBoundingClientRect().height < 44 || b.getBoundingClientRect().width < 44).map((b) => (b.id || b.className || b.textContent).slice(0, 20)))).map((x) => `${w}/${go}:${x}`));
       }
       await q.context().close();
     }

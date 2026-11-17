@@ -150,6 +150,8 @@ button.sub:disabled,button.main:disabled{opacity:.45;cursor:default}
 .cal .c .hd{position:absolute;right:2px;top:1px;font-size:.55rem;color:var(--shu2);font-weight:900}
 .cal .c.p3 .hd{color:#ffe9a8}
 .cal .c.off{visibility:hidden}
+/* 幅が狭いと7列が44pxに届かないので、すきまを詰めて左右の余白まで使う（押せる所は44px以上） */
+@media (max-width:360px){.cal{gap:1px;margin-inline:-13px}.cal .c{border-radius:6px}}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;font-size:.75rem;color:var(--ink2)}
 .legend span{display:inline-flex;align-items:center;gap:4px}.legend em{display:inline-block;width:14px;height:14px;border-radius:4px;font-style:normal}
 .about h3{font-size:1rem;margin:.6rem 0 .2rem;color:var(--ai2)}
@@ -426,10 +428,11 @@ function load() {
   s.recent = [...new Set([...(o.recent || []), ...(n.recent || [])])].slice(-150);
   const ra = a.runs, rb = b.runs;
   s.runs = Object.assign({}, n.runs);
+  // とことんを終えた（新しいほうが null）なら、保存に失敗したあとでも古い途中経過で戻さない
   for (const m of new Set([...Object.keys(ra), ...Object.keys(rb)])) {
     const x = ra[m], y = rb[m];
     if (x === undefined || y === undefined) { if (x || y) s.runs[m] = x || y; continue; }
-    if (!x || !y) { const r = x || y; if (!r || bank(s, r) || doneOf(r)) continue; const bd = bookOf(s, r.mode); if (!bd || !bd[r.date]) s.runs[m] = r; continue; }
+    if (!x || !y) { const r = x || y; if (!r || bank(s, r) || doneOf(r) || (r.mode === "e" && n.runs[m] === null)) continue; const bd = bookOf(s, r.mode); if (!bd || !bd[r.date]) s.runs[m] = r; continue; }
     if (x.id !== y.id) { const [w, l] = x.date > y.date || (x.date === y.date && (x.t0 || 0) > (y.t0 || 0)) ? [x, y] : [y, x]; bank(s, l); s.runs[m] = w; }
     else { const px = prog(x), py = prog(y); s.runs[m] = px > py ? x : py > px ? y : n.runs[m]; }
   }
