@@ -43,6 +43,10 @@ const G = req(path.join(root, "gen.js")), ART = req(path.join(root, "art.js"));
   }
   check(`場面：4つの難しさ×6場面×${N}で、危ない所の数・見落としやすいものの数・置き場所・絵がそろう`, bad.length === 0, bad.join(" / "));
   check(`危ない所の${G.RISK_IDS.length}種類が全部どこかで出る（まもり帳を全部集められる）`, G.RISK_IDS.every((id) => seenRisk.has(id)), G.RISK_IDS.filter((id) => !seenRisk.has(id)).join(","));
+  { // 記録の recent は tidy の形の検査を通った鍵だけ残す。作る鍵が全部その形に合うか（数字入りの id「drain2」が捨てられ、練習の数が合わなかった。2026-11-17 PR #1 の CI）
+    const re = new RegExp((readFileSync(path.join(root, "index.html"), "utf8").match(/s\.recent\.filter\(\(k\) => typeof k === "string" && \/(.+?)\/\.test\(k\)\)/) || [])[1] || "^$");
+    const badKeys = [...keys.flatMap((k) => [...k])].filter((k) => !re.test(k));
+    check("場面の鍵（recent に残す形）が、記録を直す tidy の形の検査を全部通る", badKeys.length === 0, badKeys.slice(0, 3).join(" / ")); }
   check("場面の組み合わせは難しさごとに300通りより多い（同じ場面ばかりにならない）", keys.every((k) => k.size > 300), keys.map((k) => k.size).join(","));
   const longs = G.RISK_IDS.filter((id) => [...G.RISKS[id].why].length > 40 || [...G.RISKS[id].fix].length > 30 || !G.SRC[G.RISKS[id].src]);
   check("危ない所の説明は40字以内・直し方は30字以内・出典がある（やさしい日本語）", longs.length === 0, longs.join(","));

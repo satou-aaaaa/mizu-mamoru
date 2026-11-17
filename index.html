@@ -442,7 +442,7 @@ const okUid = (u) => typeof u === "string" && /^[scm]\d$/.test(u);
 function tidy(s) {
   s.ebest = num(s.ebest); s.posts = num(s.posts);
   for (const q of BOXES) if (!s[q] || typeof s[q] !== "object" || Array.isArray(s[q])) s[q] = {};
-  if (!Array.isArray(s.recent)) s.recent = []; s.recent = s.recent.filter((k) => typeof k === "string" && /^[a-z.]+$/.test(k)).slice(-150);
+  if (!Array.isArray(s.recent)) s.recent = []; s.recent = s.recent.filter((k) => typeof k === "string" && /^[a-z0-9.]+$/.test(k)).slice(-150);
   for (const k in s.dex) { if (!G.RISKS[k]) delete s.dex[k]; else s.dex[k] = num(s.dex[k]); }
   const okRec = (x, n) => !!x && typeof x === "object" && Array.isArray(x.m) && x.m.length === n && x.m.every((v) => Number.isInteger(v) && v >= 0);
   for (const [b, n] of [[s.days, 5], [s.hdays, 3], [s.adays, 5]]) for (const d in b) if (!okDate(d) || !okRec(b[d], n)) delete b[d]; // 場面の数と合わない記録は読まない（今日の5つが始められなくなる）
