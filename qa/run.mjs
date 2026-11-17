@@ -92,7 +92,7 @@ check("README の URL のすぐ後ろに全角の字を続けない（Link check
 { const sw = readFileSync(path.join(root, "sw.js"), "utf8"), mf = JSON.parse(readFileSync(path.join(root, "manifest.webmanifest"), "utf8"));
   { const st = await checkSwStall(sw); check("PWA：通信が止まっても4秒ほどで保存した画面に切り替わり、少しずつ届く受信は待ち、何も無ければ60秒で返す（shared-workflows template/qa/sw-check.mjs）", st.ok, JSON.stringify(st)); }
   const shell = JSON.parse(sw.match(/SHELL = (\[[^\]]+\])/)[1]);
-  check("PWA：sw.js は画面のファイルを全部保存し（引き継ぎの transfer.js も）、取り直しで古い画面を入れず、外へ何も送らない", ["./index.html", "./gen.js", "./art.js", "./transfer.js", "./depth.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"].every((f) => shell.includes(f)) && /cache: "reload"/.test(sw) && !/https?:\/\//.test(sw.replace(/^\/\/.*$/gm, "")));
+  check("PWA：sw.js は画面のファイルを全部保存し（引き継ぎの transfer.js も）、取り直しで古い画面を入れず、外へ何も送らない", ["./index.html", "./gen.js", "./art.js", "./transfer.js", "./depth.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"].every((f) => shell.includes(f)) && /cache: "reload"/.test(sw) && !/https?:\/\//.test(sw.replace(/^\/\/.*$/gm, "")));
   check("PWA：manifest にアイコン2つと名前がある", mf.name === "水の事故から守る" && mf.icons.length >= 2 && mf.start_url === "./"); }
 
 // ---- 3. ブラウザで遊ぶ ----
