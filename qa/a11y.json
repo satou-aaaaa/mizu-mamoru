@@ -1,0 +1,9 @@
+{
+  "screens": [
+    { "name": "今日の5つ", "click": ["#go-d"] },
+    { "name": "練習", "click": ["#go-p"] },
+    { "name": "とことん", "click": ["#go-e"] },
+    { "name": "このゲームについて", "click": ["#f-about"] },
+    { "name": "見やすさの設定", "click": ["[data-a11y-open]"] }
+  ]
+}
