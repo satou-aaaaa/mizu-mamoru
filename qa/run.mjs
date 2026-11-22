@@ -15,6 +15,7 @@ import { checkSwStall } from "./sw-check.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const results = [];
 const check = (name, ok, detail = "") => results.push({ name, ok: !!ok, detail: String(detail).slice(0, 400) });
+const firstClose = async (q) => { if (await q.locator("#howto[open]").count()) await q.click("#howto-ok"); if (await q.locator("#core-coach").count()) { await q.evaluate(() => Core.coach.leave()); await q.waitForTimeout(100); } }; // はじめての練習の吹き出しをやめてホームへ（sync-template の migrateFirstQa が足した）
 const req = createRequire(import.meta.url);
 const G = req(path.join(root, "gen.js")), ART = req(path.join(root, "art.js"));
 
@@ -120,7 +121,7 @@ async function newPage(w = 390, ctx) {
   await p.goto(url); await p.waitForTimeout(200);
   return p;
 }
-const closeHow = async (p) => { if (await p.locator("#howto[open]").count()) await p.click("#howto-ok"); };
+const closeHow = async (p) => { await firstClose(p); };
 const risksOf = (p) => p.evaluate(() => { const c = __dc.cur(); return c.P.risks.filter((u) => !c.found.includes(u)); });
 const safeOf = (p) => p.evaluate(() => { const c = __dc.cur(); return c.P.parts.filter((x) => !x.risk && !c.wrong.includes(x.uid)).map((x) => x.uid); });
 const mem = (p) => p.evaluate(() => JSON.parse(localStorage.getItem("mizu-v1") || "{}"));
@@ -132,8 +133,8 @@ async function solve(p, { wrong = 0 } = {}) {
 
 try {
   const p = await newPage();
-  check("はじめて開くと遊び方が出る", await p.locator("#howto[open]").count() === 1);
-  await p.click("#howto-ok");
+  check("はじめて開くと遊び方が出る", await p.locator("#core-coach").count() === 1);
+  await firstClose(p);
   check("「わかった」を押したその場で遊び方を見た記録が残る", (await mem(p)).tut === true);
   {
     // Esc を押した直後に読み直しても出ない（close の知らせは遅れて届くので cancel でも残す。10回）
@@ -430,7 +431,7 @@ try {
 // 引き継ぎコード（shared-workflows template/qa/transfer-check.mjs）
 try {
   const sample = { "mizu-v1": JSON.stringify({ v: 1, tut: true, days: { "2026-11-07": { m: [0, 1, 0, 0, 2] } }, hdays: {}, adays: {}, dex: { nakasu: 2, darkcloud: 1, look: 1 }, runs: {}, kofi: {}, ach: {}, ebest: 7, posts: 12, recent: [], t: 1 }) };
-  await checkTransfer({ browser, url, game: "mizu-mamoru", sample, check, open: async (pg) => { if (await pg.locator("#howto[open]").count()) await pg.click("#howto-ok"); } });
+  await checkTransfer({ browser, url, game: "mizu-mamoru", sample, check, open: async (pg) => { await firstClose(pg); } });
 } catch (e) { check("引き継ぎの検査が最後まで動く", false, e.message.split("\n")[0]); }
   { const c = await browser.newContext(); const r = await c.newPage(); const big = []; // 題が h1{flex:1} で縦に伸び（伸びない形と比べて4pxより高ければ失敗）、iPad の縦で大きなすき間が出た（shared-workflows incidents/2026-11-07-title-stretched.md）
     for (const [w, h] of [[820, 1180], [390, 844], [1280, 800]]) { await r.setViewportSize({ width: w, height: h }); await r.goto(url); await r.waitForTimeout(200); await r.keyboard.press("Escape"); await r.waitForTimeout(100);
